@@ -18,10 +18,20 @@ jobs:
       tagName: v1.6.2
       mingwTargetZip: libunwind-${{ github.ref_name }}-mingw64-x86_64-posix-seh-rev0-8.1.0.zip
     steps:
-      - name: git clone
-        shell: cmd
-        run: git clone --recursive https://github.com/libunwind/libunwind.git && cd libunwind && git checkout ${{ env.tagName }}
-        
+#       - name: git clone
+#         shell: cmd
+#         run: git clone --recursive https://github.com/libunwind/libunwind.git && cd libunwind && git checkout ${{ env.tagName }}
+
+      - shell: cmd
+        run: |
+          curl http://download.savannah.nongnu.org/releases/libunwind/libunwind-1.6.2.tar.gz --output libunwind-1.6.2.tar.gz &&^
+          tar -xvf libunwind-1.6.2.tar.gz &&^
+          rename "libunwind-1.6.2" "libunwind" &&^
+          cd libunwind &&^
+          dir
+          
+      - shell: cmd
+        run: curl 
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
         with:
