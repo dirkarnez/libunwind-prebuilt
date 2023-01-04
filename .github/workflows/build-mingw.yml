@@ -24,9 +24,9 @@ jobs:
 
       - shell: cmd
         run: |
-          curl http://download.savannah.nongnu.org/releases/libunwind/libunwind-1.6.2.tar.gz --output libunwind-1.6.2.tar.gz &&^
+          curl http://download.savannah.nongnu.org/releases/libunwind/libunwind-1.6.2.tar.gz -L --output libunwind-1.6.2.tar.gz &&^
           tar -xvf libunwind-1.6.2.tar.gz &&^
-          rename "libunwind-1.6.2" "libunwind" &&^
+          rename libunwind-1.6.2 libunwind &&^
           cd libunwind &&^
           dir
           
