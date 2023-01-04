@@ -30,8 +30,6 @@ jobs:
           cd libunwind &&^
           dir
           
-      - shell: cmd
-        run: curl 
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
         with:
