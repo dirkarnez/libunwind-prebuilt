@@ -1,0 +1,88 @@
+name: cpp-cmake-mingw-prebuilt-release-actions-workflow
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - '*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+permissions:
+    contents: write
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        compiler:
+        - {
+            name: "x86_64-8.1.0-release-posix-seh-rt_v6-rev0",
+            url: "https://github.com/dirkarnez/cpp-tools/raw/main/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z"
+          }
+        - {
+            name: "winlibs-x86_64-posix-seh-gcc-11.2.0-mingw-w64-9.0.0-r1",
+            url: "https://github.com/brechtsanders/winlibs_mingw/releases/download/11.2.0-12.0.1-9.0.0-r1/winlibs-x86_64-posix-seh-gcc-11.2.0-mingw-w64-9.0.0-r1.zip"
+          }
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      libraryName: libunwind
+      tagName: v1.8.3
+    steps:
+    
+      - uses: actions/checkout@v4
+        with:
+          repository: libunwind/libunwind
+          ref: ${{ env.tagName }}
+          path: ${{ env.libraryName }}
+          submodules: true
+          
+#       - name: git clone
+#         shell: cmd
+#         run: git clone --recursive https://github.com/libunwind/libunwind.git && cd libunwind && git checkout ${{ env.tagName }}
+
+      # - shell: cmd
+      #   run: |
+      #     curl http://download.savannah.nongnu.org/releases/libunwind/libunwind-1.6.2.tar.gz -L --output libunwind-1.6.2.tar.gz &&^
+      #     tar -xvf libunwind-1.6.2.tar.gz &&^
+      #     rename libunwind-1.6.2 libunwind &&^
+      #     cd libunwind &&^
+      #     dir
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: make autoconf automake libtool autogen perl
+                 
+      - name: download compiler
+        if: ${{  matrix.compiler.url }}
+        shell: cmd
+        run: |
+          curl ${{ matrix.compiler.url }} -L --output compiler &&^
+          7z.exe x compiler
+          
+      - name: set PATH, check mingw version, cmake generate, build and install
+        shell: msys2 {0}
+        run: |
+          workspace=$(pwd) &&
+          cd libunwind && 
+          export PATH="$workspace/mingw64:$workspace/mingw64/bin:$workspace/msys64/usr/bin:/usr/bin" &&
+          g++ --version && 
+          autoreconf -i && 
+          ./configure --prefix="$(pwd)/installation" &&
+          make && make install
+
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'zip'
+          directory: "${{ env.libraryName }}/installation"
+          filename: "${{ env.libraryName }}-${{ github.ref_name }}-${{ matrix.compiler.name }}.zip"
+        
+      - name: Release prebuilt
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "${{ env.libraryName }}/installation/${{ env.libraryName }}-${{ github.ref_name }}-${{ matrix.compiler.name }}.zip"
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
